@@ -1,0 +1,221 @@
+#! /nev
+import os, strutils, osproc, json, templates, sequtils, nre
+import templates, packages.docutils.rstgen, parseopt2
+
+## Reads a source file as separate lines and formats HTML entities.
+proc read_source_file*(file: string): seq[string] =
+  let str = readFile(file & ".nim").replace("<", "&lt;").replace(">", "&gt;")
+  str.split("\n")
+
+proc read_nimble(file: string): seq[string] = readFile(file & ".nimble").split("\n")
+
+## # Type definitions
+
+## Object to hold a nimble dependency.
+
+type Dependency = object
+  project : string
+  version : string
+
+## Object to hold each section (code and documentation)
+type Section = object
+  docs: string
+  code: string
+
+## Regex to match a comment
+let comment_matcher = re"^\s*##\s?"
+
+## Ignore the first line if it's a shebang.
+proc remove_shebang(lines: seq[string]) : seq[string] =
+  result = if lines[0].startswith("#!"):
+      lines[1..<lines.len()]
+    else:
+      lines
+
+## Determine whether a line contains a declaration or not.
+proc match_declaration(line: string): bool =
+  let clean = line.strip()
+  clean.startsWith("type") or clean.startsWith("class")
+
+proc process_dependencies(lines: seq[string]): seq[Dependency] =
+  map(
+    filter(lines, proc(line: string): bool = line.startsWith("requires")),
+    proc(line: string): Dependency = Dependency(project: line[10..<line.len()-1], version: ""))
+
+proc parse_version(lines: seq[string]): string =
+  let parsed = filter(lines, proc(line: string): bool = line.startsWith("version"))
+  if parsed.len() == 1:
+    parsed[0].split("=")[1].strip.replace("\"", "")
+  else:
+    ""
+proc parse_decription(lines: seq[string]): string =
+  let parsed = filter(lines, proc(line: string): bool = line.startsWith("description"))
+  if parsed.len() == 1:
+    parsed[0].split("=")[1].strip.replace("\"", "")
+  else:
+    ""
+
+
+proc generate_header(dependencies: seq[Dependency], version: string, project: string, description: string) : string =
+  tmpli html"""
+  <div class='header'>
+    <h1 class='project-name'>$(project)</h1><h2 class='project-version'>$(version)</h2>
+    <p>$(description)</p>
+    <table class='dependencies'>
+
+      $for dependency in dependencies {
+      <tr>
+        <td>$(dependency.project)</td>
+        <td class="dotted"><hr></td>
+        <td>$(dependency.version)</td>
+      </tr>
+      }
+
+    </table>
+  </div>"""
+
+## Parse a sequence of lines.
+proc parse_source(source_lines : seq[string]) : seq[Section] =
+
+  var lines = source_lines
+
+  for linenum in 2..<lines.len():
+    if lines[linenum].match(re"coding[:=]\s*([-\w.]+)").isSome():
+      lines.delete(linenum, linenum)
+      break
+
+  var sections :seq[Section]= @[]
+
+  var has_code = false
+  var docs_text = ""
+  var code_text = ""
+
+  ## Process the `lines`.
+  for line in lines:
+        var process_as_code = false
+        ## Only go into multiline comments section when one of the delimiters is found to be at the start of a line.
+        ## Get rid of the delimiters so that they aren't in the final docs.
+
+        if line.match(comment_matcher).isSome():
+            if has_code:
+                sections.add(Section(docs: docs_text, code: code_text))
+                has_code = false
+                docs_text = ""
+                code_text = ""
+            docs_text = docs_text & line.replace(comment_matcher, "") & "\n"
+
+        else:
+            process_as_code = true
+
+        if process_as_code:
+            if code_text != "" and match_declaration(line):
+                  sections.add(Section(docs: docs_text, code: code_text))
+                  has_code = false
+                  docs_text = ""
+                  code_text = ""
+
+            has_code = true
+            code_text = code_text & line & "\n"
+
+  sections.add(Section(docs: docs_text, code: code_text))
+  sections
+
+
+let rst_config = defaultConfig()
+
+proc naive_markdown(chunk: string): string =
+  let stripped = chunk.strip()
+  if stripped.startsWith("# "):
+      "<h2>" & stripped[2..<stripped.len()] & "</h2>"
+  elif stripped.startsWith("## "):
+      "<h3>" & stripped[3..<stripped.len()] & "</h3>"
+  else:
+      chunk
+
+## Creates a documentation cell's HTML based on a `Section`.
+proc create_row*(section: Section): string =
+  # let rst_renderered = rstgen.rstToHtml(section.docs, {}, rst_config).replace("\n", "<br>")
+  # echo "--------------------"
+  # echo rst_renderered
+  let markdowned =  naive_markdown(section.docs)
+  tmpli html"""
+  <tr>
+    <td class='comment_cell'>$(markdowned)</td>
+    <td class='code_cell'><pre><code class="nimrod">$(section.code)</code></pre></td>
+  </tr>"""
+
+
+proc create_html(sections: seq[Section], css: string, js: string) : string =
+  tmpli html"""
+  <html>
+
+  <head>
+    <style>$(css)</style>
+    <script>$(js)</script>
+  </head>
+
+  <body>
+    <table class='content'>
+
+      $for section in sections {
+        $(create_row(section))
+      }
+
+    </table>
+    <div class="footer">Generated by <a href="https://github.com/ruivieira/literate">Literate</a>.&nbsp;&nbsp;Syntax highlighting provided by <a href="https://highlightjs.org/">highlight.js</a></div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+  </html>"""
+
+
+## Compile time inclusion of Javascript and CSS.
+const js = slurp"js/highlight.pack.js"
+const css = slurp"js/styles/default.css"
+
+## # Command line interface
+
+const usageString =
+  """Usage: literature [OPTIONS]
+Options:
+    -f                  Nim input file
+    -o                  Output HTML (default: uberdoc.html)
+    -h --help           print this help menu
+"""
+var output = "uberdoc.html"
+var input = ""
+
+for kind, key, val in getopt():
+  case kind
+  of cmdArgument: discard
+  of cmdShortOption, cmdLongOption:
+    case key
+    of "help", "h": echo usageString
+    of "f": input = val
+    of "o": output = val
+    else: discard
+  of cmdEnd: discard
+
+if input == "":
+  echo "Must specify a source file."
+else:
+  echo "Generation $2 from $1" % [input, output]
+
+  let lines = read_source_file(input)
+
+  let nimble_lines = read_nimble(input)
+
+  let dependencies = process_dependencies(nimble_lines)
+  let version = parse_version(nimble_lines)
+  let description = parse_decription(nimble_lines)
+
+  let initial_section = generate_header(dependencies, version, input, description)
+
+  let sections = parse_source(
+    remove_shebang(lines)
+  )
+
+  let all_sections = Section(docs: initial_section, code: "") & sections
+
+  let html = create_html(all_sections, css, js)
+
+  writeFile(output, html)
