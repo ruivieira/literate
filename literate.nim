@@ -55,7 +55,8 @@ proc parse_decription(lines: seq[string]): string =
   else:
     ""
 
-
+## The header will contain info about project's name, version, description and dependencies.
+## All taken from the Nimble definition file.
 proc generate_header(dependencies: seq[Dependency], version: string, project: string, description: string) : string =
   tmpli html"""
   <div class='header'>
@@ -92,9 +93,8 @@ proc parse_source(source_lines : seq[string]) : seq[Section] =
 
   ## Process the `lines`.
   for line in lines:
+
         var process_as_code = false
-        ## Only go into multiline comments section when one of the delimiters is found to be at the start of a line.
-        ## Get rid of the delimiters so that they aren't in the final docs.
 
         if line.match(comment_matcher).isSome():
             if has_code:
@@ -134,9 +134,6 @@ proc naive_markdown(chunk: string): string =
 
 ## Creates a documentation cell's HTML based on a `Section`.
 proc create_row*(section: Section): string =
-  # let rst_renderered = rstgen.rstToHtml(section.docs, {}, rst_config).replace("\n", "<br>")
-  # echo "--------------------"
-  # echo rst_renderered
   let markdowned =  naive_markdown(section.docs)
   tmpli html"""
   <tr>
@@ -204,7 +201,7 @@ else:
     echo "Both $1.nim and $1.nimble must exist." % [input]
 
   else:
-      
+
     echo "Generation $2 from $1" % [input, output]
 
     let lines = read_source_file(input)

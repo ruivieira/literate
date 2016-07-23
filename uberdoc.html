@@ -294,10 +294,12 @@ proc parse_decription(lines: seq[string]): string =
   if parsed.len() == 1:
     parsed[0].split("=")[1].strip.replace("\"", "")
   else:
-    ""
-
-
-proc generate_header(dependencies: seq[Dependency], version: string, project: string, description: string) : string =
+    ""</code></pre></td>
+</tr>
+<tr>
+  <td class='comment_cell'>The header will contain info about project's name, version, description and dependencies.
+All taken from the Nimble definition file.</td>
+  <td class='code_cell'><pre><code class="nimrod">proc generate_header(dependencies: seq[Dependency], version: string, project: string, description: string) : string =
   tmpli html"""
   &lt;div class='header'&gt;
     &lt;h1 class='project-name'&gt;$(project)&lt;/h1&gt;&lt;h2 class='project-version'&gt;$(version)&lt;/h2&gt;
@@ -335,12 +337,10 @@ proc generate_header(dependencies: seq[Dependency], version: string, project: st
 <tr>
   <td class='comment_cell'>Process the `lines`.</td>
   <td class='code_cell'><pre><code class="nimrod">for line in lines:
-        var process_as_code = false</code></pre></td>
-</tr>
-<tr>
-  <td class='comment_cell'>Only go into multiline comments section when one of the delimiters is found to be at the start of a line.
-Get rid of the delimiters so that they aren't in the final docs.</td>
-  <td class='code_cell'><pre><code class="nimrod">if line.match(comment_matcher).isSome():
+
+        var process_as_code = false
+
+        if line.match(comment_matcher).isSome():
             if has_code:
                 sections.add(Section(docs: docs_text, code: code_text))
                 has_code = false
@@ -379,9 +379,6 @@ proc naive_markdown(chunk: string): string =
 <tr>
   <td class='comment_cell'>Creates a documentation cell's HTML based on a `Section`.</td>
   <td class='code_cell'><pre><code class="nimrod">proc create_row*(section: Section): string =
-  # let rst_renderered = rstgen.rstToHtml(section.docs, {}, rst_config).replace("\n", "&lt;br&gt;")
-  # echo "--------------------"
-  # echo rst_renderered
   let markdowned =  naive_markdown(section.docs)
   tmpli html"""
   &lt;tr&gt;
@@ -449,7 +446,7 @@ else:
     echo "Both $1.nim and $1.nimble must exist." % [input]
 
   else:
-      
+
     echo "Generation $2 from $1" % [input, output]
 
     let lines = read_source_file(input)
