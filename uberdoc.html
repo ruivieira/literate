@@ -464,9 +464,7 @@ else:
 
     let nimble_lines = read_nimble(input_file)
 
-    let dependencies = process_dependencies(nimble_lines)
-    let version = parse_version(nimble_lines)
-    let description = parse_decription(nimble_lines)
+    let (dependencies, version, description) = (process_dependencies(nimble_lines), parse_version(nimble_lines), parse_decription(nimble_lines))
 
     let initial_section = generate_header(dependencies, version, input_file, description)
 

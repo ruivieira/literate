@@ -133,7 +133,7 @@ proc naive_markdown(chunk: string): string =
       chunk
 
 ## Creates a documentation cell's HTML based on a `Section`.
-proc create_row*(section: Section): string =
+proc create_row(section: Section): string =
   let markdowned =  naive_markdown(section.docs)
   tmpli html"""
   <tr>
@@ -215,21 +215,14 @@ else:
 
     echo "Generation $2 from $1" % [input_file, output]
 
-    let lines = read_source_file(input_file)
+    let (lines, nimble_lines) = (read_source_file(input_file), read_nimble(input_file))
 
-    let nimble_lines = read_nimble(input_file)
+    let (dependencies, version, description) = (process_dependencies(nimble_lines), parse_version(nimble_lines), parse_decription(nimble_lines))
 
-    let dependencies = process_dependencies(nimble_lines)
-    let version = parse_version(nimble_lines)
-    let description = parse_decription(nimble_lines)
-
-    let initial_section = generate_header(dependencies, version, input_file, description)
-
-    let sections = parse_source(
-      remove_shebang(lines)
-    )
-
-    let all_sections = Section(docs: initial_section, code: "") & sections
+    let all_sections = Section(
+      docs: generate_header(dependencies, version, input_file, description),
+      code: "") &
+      parse_source(remove_shebang(lines))
 
     let html = create_html(all_sections, css, js)
 
