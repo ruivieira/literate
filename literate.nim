@@ -34,8 +34,9 @@ proc remove_shebang(lines: seq[string]) : seq[string] =
 
 ## Determine whether a line contains a declaration or not.
 proc match_declaration(line: string): bool =
+  const keywords = @["type", "proc"]
   let clean = line.strip()
-  clean.startsWith("type") or clean.startsWith("class")
+  any(keywords, proc(keyword: string): bool = clean.startsWith(keyword))
 
 proc process_dependencies(lines: seq[string]): seq[Dependency] =
   map(
