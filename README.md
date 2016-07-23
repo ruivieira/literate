@@ -17,7 +17,7 @@ Specify a source file (the Nim source without the file extension, *e.g.* to proc
 literate -f:foo -o:foo.html
 ```
 
-See the output example.
+See the (output example)[https://htmlpreview.github.io/?https://github.com/ruivieira/literate/blob/master/uberdoc.html].
 
 ## TODO and gotchas
 
