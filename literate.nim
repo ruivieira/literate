@@ -198,24 +198,31 @@ for kind, key, val in getopt():
 if input == "":
   echo "Must specify a source file."
 else:
-  echo "Generation $2 from $1" % [input, output]
 
-  let lines = read_source_file(input)
+  if not fileExists(input & ".nim") or not fileExists(input & ".nimble"):
 
-  let nimble_lines = read_nimble(input)
+    echo "Both $1.nim and $1.nimble must exist." % [input]
 
-  let dependencies = process_dependencies(nimble_lines)
-  let version = parse_version(nimble_lines)
-  let description = parse_decription(nimble_lines)
+  else:
+      
+    echo "Generation $2 from $1" % [input, output]
 
-  let initial_section = generate_header(dependencies, version, input, description)
+    let lines = read_source_file(input)
 
-  let sections = parse_source(
-    remove_shebang(lines)
-  )
+    let nimble_lines = read_nimble(input)
 
-  let all_sections = Section(docs: initial_section, code: "") & sections
+    let dependencies = process_dependencies(nimble_lines)
+    let version = parse_version(nimble_lines)
+    let description = parse_decription(nimble_lines)
 
-  let html = create_html(all_sections, css, js)
+    let initial_section = generate_header(dependencies, version, input, description)
 
-  writeFile(output, html)
+    let sections = parse_source(
+      remove_shebang(lines)
+    )
+
+    let all_sections = Section(docs: initial_section, code: "") & sections
+
+    let html = create_html(all_sections, css, js)
+
+    writeFile(output, html)
