@@ -9,5 +9,6 @@ license       = "GPL3"
 
 requires "nim >= 0.14.3"
 requires "compiler"
+requires "templates"
 
 bin = @["literate"]

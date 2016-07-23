@@ -1,6 +1,6 @@
 #! /nev
-import os, strutils, osproc, json, templates, sequtils, nre
-import templates, packages.docutils.rstgen, parseopt2, options
+import os, strutils, sequtils, nre, parseopt2, options
+import templates
 
 ## Reads a source file as separate lines and formats HTML entities.
 proc read_source_file*(file: string): seq[string] =
