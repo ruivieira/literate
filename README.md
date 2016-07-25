@@ -3,7 +3,9 @@ Documentation generator for Nim, inspired by [Marginalia](http://gdeer81.github.
 
 ## Building
 
-Clone the repository and run 
+Install the [slimdown](https://github.com/ruivieira/nim-slimdown) module.
+
+Clone this repository and run 
 
 ```
 nimble build

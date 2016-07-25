@@ -1,6 +1,6 @@
 #! /nev
 import os, strutils, sequtils, nre, parseopt2, options
-import templates
+import templates, slimdown
 
 ## Reads a source file as separate lines and formats HTML entities.
 proc read_source_file*(file: string): seq[string] =
@@ -9,7 +9,7 @@ proc read_source_file*(file: string): seq[string] =
 
 proc read_nimble(file: string): seq[string] = readFile(file & ".nimble").split("\n")
 
-## # Type definitions
+## ## Type definitions
 
 ## Object to hold a nimble dependency.
 
@@ -122,20 +122,11 @@ proc parse_source(source_lines : seq[string]) : seq[Section] =
   sections
 
 
-## # HTLM generation.
-
-proc naive_markdown(chunk: string): string =
-  let stripped = chunk.strip()
-  if stripped.startsWith("# "):
-      "<h2>" & stripped[2..<stripped.len()] & "</h2>"
-  elif stripped.startsWith("## "):
-      "<h3>" & stripped[3..<stripped.len()] & "</h3>"
-  else:
-      chunk
+## ## HTLM generation.
 
 ## Creates a documentation cell's HTML based on a `Section`.
 proc create_row(section: Section): string =
-  let markdowned =  naive_markdown(section.docs)
+  let markdowned = slimdown.md(section.docs)
   tmpli html"""
   <tr>
     <td class='comment_cell'>$(markdowned)</td>
@@ -180,7 +171,7 @@ proc create_html(sections: seq[Section], css: string, js: string) : string =
 const js = slurp"js/highlight.pack.js"
 const css = slurp"js/styles/default.css"
 
-## # Command line interface
+## ## Command line interface
 
 const usageString =
   """Usage: literature [OPTIONS]

@@ -223,14 +223,24 @@ code {
       <td class="dotted"><hr></td>
       <td></td>
     </tr>
+    <tr>
+      <td>templates</td>
+      <td class="dotted"><hr></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>slimdown</td>
+      <td class="dotted"><hr></td>
+      <td></td>
+    </tr>
   </table>
 </div></td>
   <td class='code_cell'><pre><code class="nimrod"></code></pre></td>
 </tr>
 <tr>
   <td class='comment_cell'></td>
-  <td class='code_cell'><pre><code class="nimrod">import os, strutils, osproc, json, templates, sequtils, nre
-import templates, packages.docutils.rstgen, parseopt2, options</code></pre></td>
+  <td class='code_cell'><pre><code class="nimrod">import os, strutils, sequtils, nre, parseopt2, options
+import templates, slimdown</code></pre></td>
 </tr>
 <tr>
   <td class='comment_cell'>Reads a source file as separate lines and formats HTML entities.</td>
@@ -348,7 +358,7 @@ All taken from the Nimble definition file.</td>
   var code_text = ""</code></pre></td>
 </tr>
 <tr>
-  <td class='comment_cell'>Process the `lines`.</td>
+  <td class='comment_cell'>Process the <code>lines</code>.</td>
   <td class='code_cell'><pre><code class="nimrod">for line in lines:
 
         var process_as_code = false
@@ -385,20 +395,9 @@ All taken from the Nimble definition file.</td>
   <td class='code_cell'><pre><code class="nimrod"></code></pre></td>
 </tr>
 <tr>
-  <td class='comment_cell'></td>
-  <td class='code_cell'><pre><code class="nimrod">proc naive_markdown(chunk: string): string =
-  let stripped = chunk.strip()
-  if stripped.startsWith("# "):
-      "&lt;h2&gt;" & stripped[2..&lt;stripped.len()] & "&lt;/h2&gt;"
-  elif stripped.startsWith("## "):
-      "&lt;h3&gt;" & stripped[3..&lt;stripped.len()] & "&lt;/h3&gt;"
-  else:
-      chunk</code></pre></td>
-</tr>
-<tr>
-  <td class='comment_cell'>Creates a documentation cell's HTML based on a `Section`.</td>
+  <td class='comment_cell'>Creates a documentation cell's HTML based on a <code>Section</code>.</td>
   <td class='code_cell'><pre><code class="nimrod">proc create_row(section: Section): string =
-  let markdowned =  naive_markdown(section.docs)
+  let markdowned = slimdown.md(section.docs)
   tmpli html"""
   &lt;tr&gt;
     &lt;td class='comment_cell'&gt;$(markdowned)&lt;/td&gt;
